@@ -84,6 +84,28 @@ brewer.in_edge_out_slimcat=interp1(slimcat.mjd2k,slimcat.in_edge_out,brewer.mjd2
 pandora.in_edge_out_slimcat=interp1(slimcat.mjd2k,slimcat.in_edge_out,pandora.mjd2k);
 
 
+%% add strat ozone, no2 column for bruker
+
+% calculate 10-90 km ozone partial columns -- ignores actual tropopause height!
+[alt_bk,layer_h,~,~,part_prof,dof]=...
+    read_bruker_prof_avk('O3','/home/kristof/work/bruker/PEARL_ozone_depletion/',...
+                         bruker.o3.mjd2k);
+part_col_tmp=integrate_nonuniform(...
+    alt_bk*1e5,part_prof,10e5,90e5,'midpoint', layer_h*1e5 );
+
+bruker.o3.strat_col=part_col_tmp'./du;
+
+% calculate 12-60 km NO2 partial columns to match DOAS
+[alt_bk,layer_h,~,~,part_prof,dof]=...
+    read_bruker_prof_avk('NO2','/home/kristof/work/bruker/PEARL_ozone_depletion/',...
+                         bruker.no2.mjd2k);
+part_col_tmp=integrate_nonuniform(...
+    alt_bk*1e5,part_prof,12e5,60e5,'midpoint', layer_h*1e5 );
+
+bruker.no2.strat_col=part_col_tmp';
+bruker.no2.strat_col_scaled=bruker.no2.strat_col.*bruker.no2.scale_factor;
+
+
 %% other additions
 
 % select level for temperature plots
@@ -103,6 +125,23 @@ for i=fieldnames(bruker)'
 end
       
 slimcat.T_1alt=slimcat.T(:,ind);
+
+% select level for sPV plots
+gbs_o3.spv_1alt=gbs_o3.spv(:,ind);
+gbs_no2.spv_1alt=gbs_no2.spv(:,ind);
+saoz_o3.spv_1alt=saoz_o3.spv(:,ind);
+saoz_no2.spv_1alt=saoz_no2.spv(:,ind);
+gbs_oclo.spv_1alt=gbs_oclo.spv(:,ind);
+gbs_bro.spv_1alt=gbs_bro.spv(:,ind);
+brewer.spv_1alt=brewer.spv(:,ind);
+pandora.spv_1alt=pandora.spv(:,ind);
+
+for i=fieldnames(bruker)'
+    bruker.(i{1}).spv_1alt=bruker.(i{1}).spv(:,ind);
+end
+      
+slimcat.spv_1alt=slimcat.spv(:,ind);
+
 
 % calculate slimcat differences
 gbs_o3.slimcat_absdiff=gbs_o3.tot_col_active-gbs_o3.tot_col;
@@ -139,6 +178,8 @@ for i=fieldnames(bruker)'
     elseif strcmp(i,'no2')
         bruker.(i{1}).tot_col_hf_scaled_corrected=...
             bruker.(i{1}).tot_col_scaled./(bruker.(i{1}).tot_col_hf-tmp);
+        bruker.(i{1}).strat_col_hf_scaled_corrected=...
+            bruker.(i{1}).strat_col_scaled./(bruker.(i{1}).tot_col_hf-tmp);        
     elseif strcmp(i,'o3')
         bruker.(i{1}).tot_col_hf_scaled_corrected=...
             (bruker.(i{1}).tot_col*du)./(bruker.(i{1}).tot_col_hf-tmp);
@@ -147,6 +188,18 @@ for i=fieldnames(bruker)'
             bruker.(i{1}).tot_col./(bruker.(i{1}).tot_col_hf-tmp);
     end
 end
+
+% yrs_corr=unique(bruker.hcl.year);
+% [ correction ] = hf_trend(yrs_corr,bruker.hcl);
+% [~,~,ind]=intersect_repeat(bruker.hcl.year,yrs_corr);
+% tmp=correction(ind);
+% bruker.hcl.tot_col=bruker.hcl.tot_col-tmp;
+% 
+% yrs_corr=unique(bruker.hno3.year);
+% [ correction ] = hf_trend(yrs_corr,bruker.hno3);
+% [~,~,ind]=intersect_repeat(bruker.hno3.year,yrs_corr);
+% tmp=correction(ind);
+% bruker.hno3.tot_col=bruker.hno3.tot_col-tmp;
 
 
 %% save updated file
