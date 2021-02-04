@@ -4,7 +4,7 @@ function PEARL_vortex_plots()
 %% select plots to show
 
 o3_all=0;
-no2_all=0;
+no2_all=1;
 other_all=0;
 o3_loss=0;
 tg_corr_all=0;
@@ -26,6 +26,9 @@ save_figs=0;
 
 %%% slimcat version
 qy='1';
+
+%%% type of NO2 column for bruker ('tot_col' or 'strat_col')
+bk_str='strat_col';
 
 %% plotting setup
 
@@ -83,7 +86,7 @@ if o3_all
     plot(1,1,'kx'), hold on
     plot(1,1,'k+'), hold on
     plot(1,1,'k.','markersize',10), hold on
-    legend({'GBS','SAOZ','Bruker FTIR','Brewer #69','Pandora'},'orientation','vertical',...
+    legend({'GBS','SAOZ','FTIR','Brewer','Pandora'},'orientation','vertical',...
         'FontName',fig_font,'Position',[0.887 0.22 0.094 0.16]);
     
     % plot non-vortex avg
@@ -181,13 +184,17 @@ if no2_all
     data_in.field1=gbs_no2;
     data_in.field2=saoz_no2;
     data_in.field3=bruker.no2;
-
+    
+    if strcmp(bk_str,'strat_col')
+        data_in.field3.tot_col_scaled=data_in.field3.strat_col_scaled;
+    end
+    
     axes(fig_ax(1))
     
     plot(1,1,'ks'), hold on
     plot(1,1,'kd'), hold on
     plot(1,1,'kx'), hold on
-    legend({'GBS','SAOZ','Bruker FTIR'},'orientation','vertical',...
+    legend({'GBS','SAOZ','FTIR'},'orientation','vertical',...
         'FontName',fig_font,'Position',[0.887 0.26 0.094 0.12])
     
     plot_gray_area(data_in, 'tot_col_scaled', plot_gray, plot_gray+0.2, 1)
@@ -240,7 +247,7 @@ if no2_all
 
         plot_yearly(yr,gbs_no2,'tot_col_scaled','s',plot_colors(i,:),'in')  
         plot_yearly(yr,saoz_no2,'tot_col_scaled','d',plot_colors(i,:),'in')  
-        plot_yearly(yr,bruker.no2,'tot_col_scaled','x',plot_colors(i,:),'in')
+        plot_yearly(yr,bruker.no2,[bk_str '_scaled'],'x',plot_colors(i,:),'in')
 
         if yr==2020
            plot_yearly(yr,gbs_no2,'tot_col_scaled','s',plot_gray-0.2,'out')   
@@ -319,11 +326,14 @@ if other_all
     set(gcf, 'Position', [100, 100, 1000, 750]);
     fig_ax = tight_subplot(6,1,[0.01,0.07],[0.08,0.06],[0.1,0.13]);
         
+%     set(gcf, 'Position', [100, 100, 1000, 870]);
+%     fig_ax = tight_subplot(7,1,[0.008,0.07],[0.07,0.05],[0.1,0.13]);
+
     axes(fig_ax(1))
     plot(1,1,'ks'), hold on
     plot(1,1,'kx'), hold on
     plot(1,1,'pentagram','color','k'), hold on
-    legend({'GBS','Bruker FTIR','Radiosonde'},'orientation','vertical',...
+    legend({'GBS','FTIR','Radiosonde'},'orientation','vertical',...
         'FontName',fig_font,'Position',[0.887 0.52 0.094 0.068])
     
     plot_gray_area(gbs_bro, 'dscd', plot_gray, plot_gray+0.2, 1)
@@ -343,7 +353,7 @@ if other_all
 
     axes(fig_ax(5))
     plot_gray_area(bruker.hno3, 'tot_col', plot_gray, plot_gray+0.2, 1)
-    
+
     % plot non-vortex temperatures
     data_in=struct();
     data_in.field1=gbs_o3;
@@ -505,7 +515,7 @@ if other_hf
     plot_gray_area(bruker.o3, ['tot_col_hf_scaled' corr_str], plot_gray, plot_gray+0.2, 1)
 
     axes(fig_ax(3))
-    plot_gray_area(bruker.no2, ['tot_col_hf_scaled' corr_str], plot_gray, plot_gray+0.2, 1)
+    plot_gray_area(bruker.no2, [bk_str '_hf_scaled' corr_str], plot_gray, plot_gray+0.2, 1)
 
     axes(fig_ax(4))
     plot_gray_area(bruker.hcl, ['tot_col_hf_scaled' corr_str], plot_gray, plot_gray+0.2, 1)
@@ -558,7 +568,7 @@ if other_hf
         %%% NO2 plot
         axes(fig_ax(3))
 
-        plot_yearly(yr,bruker.no2,['tot_col_hf_scaled' corr_str],'x',plot_colors(i,:),'in')  
+        plot_yearly(yr,bruker.no2,[bk_str '_hf_scaled' corr_str],'x',plot_colors(i,:),'in')  
 
         %%% HCl plot
         axes(fig_ax(4))
@@ -590,7 +600,7 @@ if other_hf
     %%% O3 plot
     axes(fig_ax(2));
     ax=gca; ax.YAxis.Exponent = 0;    
-    add_label('b) O3/HF', 5)
+    add_label('b) O_3/HF', 5)
     ylabel('Ratio')
     grid on
     set(gca,'XTick',xlim_arr)
@@ -601,7 +611,7 @@ if other_hf
     %%% NO2 plot
     axes(fig_ax(3));
     ax=gca; ax.YAxis.Exponent = 0;    
-    add_label('c) NO2/HF', 5)
+    add_label('c) NO_2/HF', 5)
     ylabel('Ratio')
     grid on
     set(gca,'XTick',xlim_arr)
@@ -654,7 +664,7 @@ if o3_loss
     
     figure
     set(gcf, 'Position', [100, 100, 1000, 600]);
-    fig_ax = tight_subplot(3,1,[0.02,0.07],[0.1,0.08],[0.08,0.04]);
+    fig_ax = tight_subplot(3,1,[0.02,0.07],[0.1,0.09],[0.08,0.04]);
 
     % temporary table for plottong
     slimcat_tmp=slimcat;
@@ -672,8 +682,6 @@ if o3_loss
     slimcat_tmp.in_edge_out=repmat(-99,height(slimcat_tmp),1);
 
     axes(fig_ax(1))
-    plot(1,1,'.','color',plot_colors(highlight==2011,:),'markersize',12), hold on
-    plot(1,1,'.','color',plot_colors(highlight==2020,:),'markersize',12)
     plot(1,1,'ks'), hold on
     plot(1,1,'kd'), hold on
     plot(1,1,'kx'), hold on
@@ -681,11 +689,24 @@ if o3_loss
     plot(1,1,'ko'), hold on
     plot(1,1,'k:','linewidth',2), hold on
     plot(1,1,'k-','linewidth',2), hold on
-    ll=legend({'2011','2020','GBS','SAOZ','Bruker FTIR','Brewer #69','Pandora',...
+    ll=legend({'GBS','SAOZ','FTIR','Brewer','Pandora',...
                'SLIMCAT 2011','SLIMCAT 2020'},'orientation','horizontal',...
                'location','northeast','FontName',fig_font);
-    ll.Position=[0.202 0.934 0.627 0.039];
+    ll.Position=[0.297 0.93 0.63 0.039];
            
+    
+    text(0.1,1.23,sprintf('Inside the vortex:'),...
+         'units','normalized','fontweight','bold',...
+         'fontsize',yr_fontsize,'color',[.2 .2 .2],'horizontalalignment','center',...
+         'FontName',fig_font)
+    
+    text(0.092,1.1,'2011','units','normalized','fontweight','bold',...
+         'fontsize',yr_fontsize,'color',plot_colors(highlight==2011,:),...
+         'horizontalalignment','right','FontName',fig_font)
+    text(0.108,1.1,'2020','units','normalized','fontweight','bold',...
+         'fontsize',yr_fontsize,'color',plot_colors(highlight==2020,:),...
+         'horizontalalignment','left','FontName',fig_font)
+             
     plot_gray_area(slimcat_tmp, 'o3_passive', plot_gray, plot_gray+0.2, 1, 'slimcat_all')
     
 % % %     % add explanatory text
@@ -700,7 +721,7 @@ if o3_loss
 % % %          'FontName',fig_font)
 % % %          
 % % %     txt_y=0.19;
-    
+        
     for yr=[2011,2020]
         
         vortex_pos='in';
@@ -720,12 +741,16 @@ if o3_loss
 % % %              'horizontalalignment','center','FontName',fig_font)
 % % %         txt_y=txt_y-0.15;
 
-        ind=(slimcat.year==yr & slimcat.in_edge_out==-1);
+        ind=(slimcat.year==yr & slimcat.in_edge_out==-1 & slimcat.DateTime.Month>1);
         xx=mjd2k_to_date(slimcat.mjd2k-(5/24));
         xx.Year=0;
 
-        plot(xx(ind),slimcat.o3_passive(ind),'.','color',plot_colors(highlight==yr,:),...
-            'markersize',12)
+%         plot(xx(ind),slimcat.o3_passive(ind),'.','color',plot_colors(highlight==yr,:),...
+%             'markersize',12)
+        tmp=slimcat.o3_passive;
+        tmp(~ind)=NaN;
+        plot(xx,tmp,slimcat_ls,'color','k','linewidth',2)
+        
 
         axes(fig_ax(2))
         plot_yearly_loss(yr,slimcat,'o3',slimcat_ls,'k','in','abs','all',2)  
@@ -742,6 +767,7 @@ if o3_loss
             plot_yearly_loss(yr,pandora,'tot_col',['o' ls],...
                          plot_colors(highlight==yr,:),vortex_pos,'abs',data_select,1.2)  
         end
+        
         
         axes(fig_ax(3))
         plot_yearly_loss(yr,slimcat,'o3',slimcat_ls,'k','in','rel','all',2)  
@@ -776,7 +802,7 @@ if o3_loss
     ylim([-200,20])
     set(gca,'XTick',xlim_arr)
     set(gca,'XTicklabel',[])
-    ylabel('DU')
+    ylabel('DU')    
 
     axes(fig_ax(3))    
     add_label('c) Rel. O_3 loss', 8)    
@@ -886,10 +912,10 @@ if slimcat_o3
             add_label('b) SAOZ',3)
 
             axes(fig_ax(3))    
-            add_label('c) Bruker FTIR',3)
+            add_label('c) FTIR',3)
 
             axes(fig_ax(4))    
-            add_label('d) Brewer #69',3)
+            add_label('d) Brewer',3)
             
             xlabel('Date (EST)')
             set(gca,'XTickLabel',cellstr(ft_to_date(xlim_arr-1,0),'MMM dd'))
@@ -907,10 +933,10 @@ if slimcat_o3
             add_label('b) SAOZ',3)
 
             axes(fig_ax(3))    
-            add_label('c) Bruker FTIR',3)
+            add_label('c) FTIR',3)
 
             axes(fig_ax(4))    
-            add_label('d) Brewer #69',3)
+            add_label('d) Brewer',3)
             
             xlabel('Date (EST)')
             set(gca,'XTickLabel',cellstr(ft_to_date(xlim_arr-1,0),'MMM dd'))
@@ -1379,7 +1405,7 @@ if tg_corr
     add_label('b) SAOZ',9)
 
     axes(fig_ax(3))
-    add_label('c) Bruker FTIR',9)
+    add_label('c) FTIR',9)
 
     %%%
     set(findall(gcf,'-property','FontName'),'FontName',fig_font)
@@ -1464,7 +1490,7 @@ if tg_corr_all
         % 2011
         ind=(data.in_edge_out==-1 & data.year==2011 & data.fractional_time>lim_11);
         plot(data.T_1alt(ind),data.tot_col(ind), plot_sym, ...
-            'markerfacecolor', plot_colors(highlight==2011,:),...
+            'markerfacecolor', plot_colors(highlight==2011,:)+0.12,...
             'markeredgecolor', plot_gray+0.2)
 
         % 2020
@@ -1507,13 +1533,14 @@ if tg_corr_all
             'markeredgecolor', plot_gray+0.1)
         
         if i==1
-            colormap(cscale)
+            colormap(flipud(cscale))
             cc=colorbar('west','position',[0.84 0.13 0.024 0.35],...
                'YAxisLocation','right');
 
             c_label_ind=[1,9,26,40,55];
             set(cc,'YTick',(c_label_ind-1)/55)
-            set(cc,'YTickLabel',cellstr(ft_to_date(all_days(c_label_ind)-0.5,2020),'dd/MM'))
+            tmp=flipud(all_days);
+            set(cc,'YTickLabel',cellstr(ft_to_date(tmp(c_label_ind)-0.5,2020),'dd/MM'))
             ylabel(cc, 'Date, 2020 (dd/mm, EST)')
             
         end
@@ -1592,11 +1619,11 @@ if tg_corr_all
 
 
     axes(fig_ax(3))
-    add_label('c) Bruker FTIR',9)
+    add_label('c) FTIR',9)
     ylabel('O_3 (DU)')
     
     axes(fig_ax(4))
-    add_label('d) Brewer #69',9)
+    add_label('d) Brewer',9)
     
     
         
