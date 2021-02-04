@@ -32,11 +32,11 @@ fit=rfit;
 
 correction=fit.trend*yrs_out-fit.trend*yrs_out(1);
 
-% % figure()
-% % plot(years,hf_mean,'ko'), hold on
-% % plot(years,fit.trend*years+fit.offset,'r--')
-% % plot(years,hf_mean-(fit.trend*years-fit.trend*years(1)),'kx'), hold on
-% % fprintf('%1.3g +- %1.3g molec cm^{-1} yr^{-1}\n', [fit.trend, fit.trend_sig])
+% figure()
+% plot(years,hf_mean,'ko'), hold on
+% plot(years,fit.trend*years+fit.offset,'r--')
+% plot(years,hf_mean-(fit.trend*years-fit.trend*years(1)),'kx'), hold on
+% fprintf('%1.3g +- %1.3g molec cm^{-2} yr^{-1}\n', [fit.trend, fit.trend_sig*fit.corr_factor])
 
 end
 
