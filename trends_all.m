@@ -1,6 +1,9 @@
 
 
-data=brewer;
+data=bruker.hf;
+
+% data(data.DateTime.Month>=5,:)=[];
+% data(data.DateTime.Month==4 & data.DateTime.Day>15,:)=[];
 
 years=unique(data.year)';
 hf_mean=NaN(size(years));
@@ -31,3 +34,11 @@ fit=rfit;
 fprintf('%1.3g +- %1.3g molec cm^{-2} yr^{-1}\n', [fit.trend, fit.trend_sig*fit.corr_factor])
 
 fprintf('%1.1f years needed, have %2i\n', [fit.years_needed, length(years)])
+
+
+figure()
+% plot(years,hf_mean,'ko'), hold on
+% plot(years,fit.trend*years+fit.offset,'r--')
+% plot(years,hf_mean-(fit.trend*years-fit.trend*years(1)),'kx'), hold on
+
+errorbar(years,hf_mean,hf_err)

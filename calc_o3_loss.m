@@ -2,10 +2,10 @@
 %CALC_O3_LOSS Summary of this function goes here
 %   Detailed explanation goes here
 
-mean_loss=0;
+mean_loss=1;
 max_loss=0;
 max_loss_day=0;
-daily_loss=1;
+daily_loss=0;
 passive_comp=0;
 
 % load tagged file
@@ -38,8 +38,8 @@ if mean_loss
     % ind=(data.day>=81 & data.day<=90 & data.year==2020 & data.in_edge_out==-1);
 
     %%% april measurements in 2020
-    % ind=(data.day>=100 & data.day<=109 & data.year==2020 & data.in_edge_out==-1);
-    % ind=(data.day>=92 & data.day<=121 & data.year==2020 & data.in_edge_out==-1);
+    ind=(data.day>=100 & data.day<=109 & data.year==2020 & data.in_edge_out==-1);
+    ind=(data.day>=92 & data.day<=121 & data.year==2020 & data.in_edge_out==-1);
 
     % ind=(data.in_edge_out==-1 & (data.year==2000 | data.year==2005 | data.year==2007 | data.year==2014 | ...
     %                             (data.year==2011 & data.fractional_time<71.25) | ...

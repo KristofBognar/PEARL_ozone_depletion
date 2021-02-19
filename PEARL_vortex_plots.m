@@ -4,17 +4,21 @@ function PEARL_vortex_plots()
 %% select plots to show
 
 o3_all=0;
-no2_all=1;
+no2_all=0;
+
 other_all=0;
-o3_loss=0;
+other_all_no2=0;
+
+o3_loss=1;
 tg_corr_all=0;
 
 slimcat_o3=0;
 slimcat_other=0;
 
-other_hf=1;
-corr_str='_corrected'; % '' for standard HF data, '_corrected' for HF trend correction
+other_hf=0;
 
+corr_hf='_corrected'; % '' for standard HF data, '_corrected' for HF trend correction
+corr_other='_corrected'; % '' for standard HCl, HNO3 data, '_corrected' for trend correction
 
 slimcat_vs_T=0;
 tg_corr=0;
@@ -28,7 +32,7 @@ save_figs=0;
 qy='1';
 
 %%% type of NO2 column for bruker ('tot_col' or 'strat_col')
-bk_str='strat_col';
+bk_str='tot_col';
 
 %% plotting setup
 
@@ -56,7 +60,7 @@ T_alt=18;
 %% load data
 
 % update vortex position tags
-update_data__sPV_o3loss([16,18,20],T_alt,qy);
+update_data__sPV_o3loss([16,18,20],T_alt,qy,corr_other);
 
 % load tagged file
 load('/home/kristof/work/PEARL_ozone_depletion/PEARL_dataset_tagged.mat')
@@ -454,7 +458,11 @@ if other_all
     grid on
     set(gca,'XTick',xlim_arr)
     set(gca,'XTicklabel',[])
-    ylim([1,8]*1e15)
+    if strcmp(corr_other,'_corrected')
+        ylim([0.5,7.1]*1e15)
+    else
+        ylim([1,8]*1e15)
+    end
     xlim(x_lim)
 
     %%% ClONO2 plot
@@ -465,7 +473,7 @@ if other_all
     grid on
     set(gca,'XTick',xlim_arr)
     set(gca,'XTicklabel',[])    
-    ylim([0,5]*1e15)
+    ylim([0.4,5]*1e15)
     xlim(x_lim)
 
     %%% HNO3 plot
@@ -476,7 +484,11 @@ if other_all
     grid on
     set(gca,'XTick',xlim_arr)
     set(gca,'XTicklabel',[])
-    ylim([0.8,4.7]*1e16)
+    if strcmp(corr_other,'_corrected')
+        ylim([0.2,4.3]*1e16)
+    else
+        ylim([0.8,4.7]*1e16)
+    end
     xlim(x_lim)
 
     %%% Temperature plot
@@ -493,7 +505,228 @@ if other_all
    
     %%%
     set(findall(gcf,'-property','FontName'),'FontName',fig_font)
-    save_pdf(save_figs, 'other_all')
+    save_pdf(save_figs, ['other_all', corr_other])
+    
+end
+
+if other_all_no2
+
+    figure      
+    set(gcf, 'Position', [100, 100, 1000, 870]);
+    fig_ax = tight_subplot(7,1,[0.008,0.07],[0.07,0.05],[0.1,0.13]);
+
+    axes(fig_ax(1))
+    plot(1,1,'ks'), hold on
+    plot(1,1,'kd'), hold on
+    plot(1,1,'kx'), hold on
+    plot(1,1,'pentagram','color','k'), hold on
+    legend({'GBS','SAOZ','FTIR','Radiosonde'},'orientation','vertical',...
+        'FontName',fig_font,'Position',[0.887 0.5 0.094 0.1])
+    
+    plot_gray_area(gbs_bro, 'dscd', plot_gray, plot_gray+0.2, 1)
+    detlim=nanmean(sqrt(gbs_bro.dscd_err.^2 + gbs_bro.dscd_std.^2))*3;
+    plot([52,108],[detlim,detlim],'k--')
+
+    axes(fig_ax(2))
+    plot_gray_area(gbs_oclo, 'dscd', plot_gray, plot_gray+0.2, 1)
+    detlim=nanmean(sqrt(gbs_oclo.dscd_err.^2 + gbs_oclo.dscd_std.^2))*3;
+    plot([52,108],[detlim,detlim],'k--')
+    
+    axes(fig_ax(3))
+    plot_gray_area(bruker.hcl, 'tot_col', plot_gray, plot_gray+0.2, 1)
+
+    axes(fig_ax(4))
+    plot_gray_area(bruker.clono2, 'tot_col', plot_gray, plot_gray+0.2, 1)
+    
+    axes(fig_ax(5))
+    
+    % merge non-vortex year NO2 data
+    data_in=struct();
+    data_in.field1=gbs_no2;
+    data_in.field2=saoz_no2;
+    data_in.field3=bruker.no2;
+    
+    if strcmp(bk_str,'strat_col')
+        data_in.field3.tot_col_scaled=data_in.field3.strat_col_scaled;
+    end
+    
+    plot_gray_area(data_in, 'tot_col_scaled', plot_gray, plot_gray+0.2, 1)
+    
+    
+    axes(fig_ax(6))
+    plot_gray_area(bruker.hno3, 'tot_col', plot_gray, plot_gray+0.2, 1)
+
+    % plot non-vortex temperatures
+    data_in=struct();
+    data_in.field1=gbs_o3;
+    data_in.field3=bruker.o3;
+    axes(fig_ax(7))
+    plot_gray_area(data_in, 'T_1alt', plot_gray, plot_gray+0.2, 1)
+        
+    % add explanatory text
+    axes(fig_ax(1))
+    text(txt_x,0.7,sprintf('Outside the\nvortex:\n1999-2019'),...
+         'units','normalized','fontweight','bold',...
+         'fontsize',yr_fontsize,'color',plot_gray,'horizontalalignment','center',...
+         'FontName',fig_font)
+
+    text(txt_x,0.3,'2020',...
+         'units','normalized','fontweight','bold',...
+         'fontsize',yr_fontsize,'color',plot_gray-0.2,'horizontalalignment','center',...
+         'FontName',fig_font)
+     
+    text(txt_x,-0.1,sprintf('Inside the\nvortex:'),...
+         'units','normalized','fontweight','bold',...
+         'fontsize',yr_fontsize,'color',[.2 .2 .2],'horizontalalignment','center',...
+         'FontName',fig_font)
+     
+    txt_y=-0.4;
+    
+    for i=1:length(highlight)
+
+        yr=highlight(i);
+        
+        %%% BrO plot
+        axes(fig_ax(1))
+        plot_yearly(yr,gbs_bro,'dscd','s',plot_colors(i,:),'in')  
+        text(txt_x,txt_y,num2str(yr),'units','normalized','fontweight','bold',...
+             'fontsize',yr_fontsize,'color',plot_colors(i,:),...
+             'horizontalalignment','center','FontName',fig_font)
+        txt_y=txt_y-0.22;
+        
+        %%% OClO plot
+        axes(fig_ax(2))
+        plot_yearly(yr,gbs_oclo,'dscd','s',plot_colors(i,:),'in')  
+        
+        %%% HCl plot
+        axes(fig_ax(3))
+        plot_yearly(yr,bruker.hcl,'tot_col','x',plot_colors(i,:),'in')  
+                 
+        %%% ClONO2 plot
+        axes(fig_ax(4))
+        plot_yearly(yr,bruker.clono2,'tot_col','x',plot_colors(i,:),'in')  
+        
+        %%% NO2 plot
+        axes(fig_ax(5))
+        
+        plot_yearly(yr,gbs_no2,'tot_col_scaled','s',plot_colors(i,:),'in')  
+        plot_yearly(yr,saoz_no2,'tot_col_scaled','d',plot_colors(i,:),'in')  
+        plot_yearly(yr,bruker.no2,[bk_str '_scaled'],'x',plot_colors(i,:),'in')
+
+        if yr==2020
+           plot_yearly(yr,gbs_no2,'tot_col_scaled','s',plot_gray-0.2,'out')   
+        end
+        
+        %%% HNO3 plot
+        axes(fig_ax(6))
+        plot_yearly(yr,bruker.hno3,'tot_col','x',plot_colors(i,:),'in')  
+        
+        %%% temperature plot
+        axes(fig_ax(7))
+        
+        % Plot with OClO DMPs here?
+        plot_yearly(yr,gbs_o3,'T_1alt','s',plot_colors(i,:),'in')  
+        plot_yearly(yr,bruker.o3,'T_1alt','x',plot_colors(i,:),'in')  
+                
+        if yr==2020
+            plot_yearly(yr,gbs_o3,'T_1alt','s',plot_gray-0.2,'out')  
+            
+            plot_radiosonde(yr,T_alt,plot_colors(i,:))
+            
+        end
+        
+    end
+    
+    %%% BrO plot
+    axes(fig_ax(1));
+    ax=gca; ax.YAxis.Exponent = 0;    
+    add_label('a) BrO dSCD', 3)
+    ylabel('molec cm^{-2}')
+    grid on
+    set(gca,'XTick',xlim_arr)
+    set(gca,'XTicklabel',[])
+    ylim([-1.3,4]*1e14)
+    xlim(x_lim)
+
+    %%% OClO plot
+    axes(fig_ax(2));
+    ax=gca; ax.YAxis.Exponent = 0;    
+    add_label('b) OClO dSCD', 3)
+    ylabel('molec cm^{-2}')
+    grid on
+    set(gca,'XTick',xlim_arr)
+    set(gca,'XTicklabel',[])
+    ylim([-0.75,2]*1e14)
+    xlim(x_lim)
+
+    %%% HCl plot
+    axes(fig_ax(3));
+    ax=gca; ax.YAxis.Exponent = 0;    
+    add_label('c) HCl', 5)
+    ylabel('molec cm^{-2}')
+    grid on
+    set(gca,'XTick',xlim_arr)
+    set(gca,'XTicklabel',[])
+    if strcmp(corr_other,'_corrected')
+        ylim([0.5,7.1]*1e15)
+    else
+        ylim([1,8]*1e15)
+    end
+    xlim(x_lim)
+
+    %%% ClONO2 plot
+    axes(fig_ax(4));
+    ax=gca; ax.YAxis.Exponent = 0;    
+    add_label('d) ClONO_2', 3)
+    ylabel('molec cm^{-2}')
+    grid on
+    set(gca,'XTick',xlim_arr)
+    set(gca,'XTicklabel',[])    
+    ylim([0.4,5]*1e15)
+    xlim(x_lim)
+
+    %%% NO2 plot
+    axes(fig_ax(5))
+    ax=gca; ax.YAxis.Exponent = 0; 
+    add_label('e) NO_2', 5)
+    ylabel('molec cm^{-2}')
+    grid on
+    set(gca,'XTick',xlim_arr)
+    set(gca,'XTickLabel',[])
+    ylim([-0.3,5.6]*1e15)
+    xlim(x_lim)
+        
+    %%% HNO3 plot
+    axes(fig_ax(6));
+    ax=gca; ax.YAxis.Exponent = 0;    
+    add_label('f) HNO_3', 3)
+    ylabel('molec cm^{-2}')
+    grid on
+    set(gca,'XTick',xlim_arr)
+    set(gca,'XTicklabel',[])
+    if strcmp(corr_other,'_corrected')
+        ylim([0.2,4.3]*1e16)
+    else
+        ylim([0.8,4.7]*1e16)
+    end
+    xlim(x_lim)
+
+    %%% Temperature plot
+    axes(fig_ax(7))
+    add_label(['g) T_{' num2str(T_alt) 'km}'], 5)
+    ylabel('K')    
+    xlabel('Date (EST)')
+    grid on
+    set(gca,'XTick',xlim_arr)
+    set(gca,'XTickLabel',cellstr(ft_to_date(xlim_arr-1,0),'MMM dd'))    
+    plot([1,200],[195,195],'k--')
+    ylim([185,245])
+    xlim(x_lim)
+   
+    %%%
+    set(findall(gcf,'-property','FontName'),'FontName',fig_font)
+    if save_figs, return, end
+%     save_pdf(save_figs, 'other_all')
     
 end
 
@@ -509,22 +742,22 @@ if other_hf
 %     fig_ax = tight_subplot(5,1,[0.012,0.07],[0.08,0.06],[0.1,0.13]);
         
     axes(fig_ax(1))
-    plot_gray_area(bruker.hf, ['tot_col' corr_str], plot_gray, plot_gray+0.2, 1)
+    plot_gray_area(bruker.hf, ['tot_col' corr_hf], plot_gray, plot_gray+0.2, 1)
 
     axes(fig_ax(2))
-    plot_gray_area(bruker.o3, ['tot_col_hf_scaled' corr_str], plot_gray, plot_gray+0.2, 1)
+    plot_gray_area(bruker.o3, ['tot_col_hf_scaled' corr_hf], plot_gray, plot_gray+0.2, 1)
 
     axes(fig_ax(3))
-    plot_gray_area(bruker.no2, [bk_str '_hf_scaled' corr_str], plot_gray, plot_gray+0.2, 1)
+    plot_gray_area(bruker.hcl, ['tot_col_hf_scaled' corr_hf], plot_gray, plot_gray+0.2, 1)
 
     axes(fig_ax(4))
-    plot_gray_area(bruker.hcl, ['tot_col_hf_scaled' corr_str], plot_gray, plot_gray+0.2, 1)
-
-    axes(fig_ax(5))
-    plot_gray_area(bruker.clono2, ['tot_col_hf_scaled' corr_str], plot_gray, plot_gray+0.2, 1)
+    plot_gray_area(bruker.clono2, ['tot_col_hf_scaled' corr_hf], plot_gray, plot_gray+0.2, 1)
     
+    axes(fig_ax(5))
+    plot_gray_area(bruker.no2, [bk_str '_hf_scaled' corr_hf], plot_gray, plot_gray+0.2, 1)
+
     axes(fig_ax(6))
-    plot_gray_area(bruker.hno3, ['tot_col_hf_scaled' corr_str], plot_gray, plot_gray+0.2, 1)
+    plot_gray_area(bruker.hno3, ['tot_col_hf_scaled' corr_hf], plot_gray, plot_gray+0.2, 1)
     
     % add explanatory text
     axes(fig_ax(1))
@@ -558,32 +791,32 @@ if other_hf
         %%% HF plot
         axes(fig_ax(1))
         
-        plot_yearly(yr,bruker.hf,['tot_col' corr_str],'x',plot_colors(i,:),'in')  
+        plot_yearly(yr,bruker.hf,['tot_col' corr_hf],'x',plot_colors(i,:),'in')  
         
         %%% O3 plot
         axes(fig_ax(2))
 
-        plot_yearly(yr,bruker.o3,['tot_col_hf_scaled' corr_str],'x',plot_colors(i,:),'in')  
-
-        %%% NO2 plot
-        axes(fig_ax(3))
-
-        plot_yearly(yr,bruker.no2,[bk_str '_hf_scaled' corr_str],'x',plot_colors(i,:),'in')  
+        plot_yearly(yr,bruker.o3,['tot_col_hf_scaled' corr_hf],'x',plot_colors(i,:),'in')  
 
         %%% HCl plot
-        axes(fig_ax(4))
+        axes(fig_ax(3))
 
-        plot_yearly(yr,bruker.hcl,['tot_col_hf_scaled' corr_str],'x',plot_colors(i,:),'in')  
+        plot_yearly(yr,bruker.hcl,['tot_col_hf_scaled' corr_hf],'x',plot_colors(i,:),'in')  
                  
         %%% ClONO2 plot
+        axes(fig_ax(4))
+
+        plot_yearly(yr,bruker.clono2,['tot_col_hf_scaled' corr_hf],'x',plot_colors(i,:),'in')  
+        
+        %%% NO2 plot
         axes(fig_ax(5))
 
-        plot_yearly(yr,bruker.clono2,['tot_col_hf_scaled' corr_str],'x',plot_colors(i,:),'in')  
-        
+        plot_yearly(yr,bruker.no2,[bk_str '_hf_scaled' corr_hf],'x',plot_colors(i,:),'in')  
+
         %%% HNO3 plot
         axes(fig_ax(6))
 
-        plot_yearly(yr,bruker.hno3,['tot_col_hf_scaled' corr_str],'x',plot_colors(i,:),'in')  
+        plot_yearly(yr,bruker.hno3,['tot_col_hf_scaled' corr_hf],'x',plot_colors(i,:),'in')  
         
     end
     
@@ -608,21 +841,10 @@ if other_hf
     ylim([1500,8500])
     xlim(x_lim)
 
-    %%% NO2 plot
+    %%% HCl plot
     axes(fig_ax(3));
     ax=gca; ax.YAxis.Exponent = 0;    
-    add_label('c) NO_2/HF', 5)
-    ylabel('Ratio')
-    grid on
-    set(gca,'XTick',xlim_arr)
-    set(gca,'XTicklabel',[])
-    ylim([-0.1,2.5])
-    xlim(x_lim)
-
-    %%% HCl plot
-    axes(fig_ax(4));
-    ax=gca; ax.YAxis.Exponent = 0;    
-    add_label('d) HCl/HF', 5)
+    add_label('c) HCl/HF', 5)
     ylabel('Ratio')
     grid on
     set(gca,'XTick',xlim_arr)
@@ -631,9 +853,9 @@ if other_hf
     xlim(x_lim)
 
     %%% ClONO2 plot
-    axes(fig_ax(5));
+    axes(fig_ax(4));
     ax=gca; ax.YAxis.Exponent = 0;    
-    add_label('e) ClONO_2/HF', 3)
+    add_label('d) ClONO_2/HF', 3)
     ylabel('Ratio')
     grid on
     set(gca,'XTick',xlim_arr)
@@ -641,6 +863,17 @@ if other_hf
     ylim([0.2,1.7])
     xlim(x_lim)
     
+    %%% NO2 plot
+    axes(fig_ax(5));
+    ax=gca; ax.YAxis.Exponent = 0;    
+    add_label('e) NO_2/HF', 5)
+    ylabel('Ratio')
+    grid on
+    set(gca,'XTick',xlim_arr)
+    set(gca,'XTicklabel',[])
+    ylim([-0.1,2.5])
+    xlim(x_lim)
+
     %%% HNO3 plot
     axes(fig_ax(6));
     ax=gca; ax.YAxis.Exponent = 0;    
@@ -650,12 +883,16 @@ if other_hf
     set(gca,'XTick',xlim_arr)
     set(gca,'XTickLabel',cellstr(ft_to_date(xlim_arr-1,0),'MMM dd'))    
     xlabel('Date (EST)')
-    ylim([2.5,22])
+    if strcmp(corr_other,'_corrected')
+        ylim([0,19])
+    else
+        ylim([2.5,22])
+    end
     xlim(x_lim)
 
     %%%
     set(findall(gcf,'-property','FontName'),'FontName',fig_font)
-    save_pdf(save_figs, ['other_hf' corr_str])
+    save_pdf(save_figs, ['other_hf' corr_hf])
     
 end
 
@@ -953,7 +1190,9 @@ end
 
 %%
 if slimcat_other
-        
+      
+    if ~isempty(corr_other), error('Use uncorrected data for SLIMCAT comparisons'); end
+    
     for rel_abs_loop={'reldiff','absdiff'}
         
         rel_abs=rel_abs_loop{1};
@@ -2092,6 +2331,13 @@ end
 
 %%
 function save_pdf(save_figs, fname)
+
+    %%% for larger than screen figure:
+    % drag figure to cross into other viewports
+    % set(gcf, 'Position', [100, 100, 1000, 870]);
+    % f_out='/home/kristof/work/documents/paper_PEARL_ozone/figures/other_all_corrected.pdf';
+    % run h, set, pos, set commands
+    % print(h,f_out,'-dpdf','-r300','-opengl')
 
     save_path='/home/kristof/work/documents/paper_PEARL_ozone/figures/';
 

@@ -1,4 +1,4 @@
-function update_data__sPV_o3loss(tag_alt_levels,T_alt,qy)
+function update_data__sPV_o3loss(tag_alt_levels,T_alt,qy,corr_other)
 %TAG_DATA_BY_SPV tag each measurement as inside/on the edge/outside of the
 %polar vortexbased on line-of-dight DMP information
 %
@@ -86,12 +86,12 @@ pandora.in_edge_out_slimcat=interp1(slimcat.mjd2k,slimcat.in_edge_out,pandora.mj
 
 %% add strat ozone, no2 column for bruker
 
-% calculate 10-90 km ozone partial columns -- ignores actual tropopause height!
+% calculate 12-90 km ozone partial columns -- ignores actual tropopause height!
 [alt_bk,layer_h,~,~,part_prof,dof]=...
     read_bruker_prof_avk('O3','/home/kristof/work/bruker/PEARL_ozone_depletion/',...
                          bruker.o3.mjd2k);
 part_col_tmp=integrate_nonuniform(...
-    alt_bk*1e5,part_prof,10e5,90e5,'midpoint', layer_h*1e5 );
+    alt_bk*1e5,part_prof,12e5,90e5,'midpoint', layer_h*1e5 );
 
 bruker.o3.strat_col=part_col_tmp'./du;
 
@@ -164,6 +164,28 @@ for i=fieldnames(bruker)'
     end
 end
 
+%% correct for HCl, HNO3 trends
+
+if strcmp(corr_other,'_corrected')
+    
+    yrs_corr=unique(bruker.hcl.year);
+    [ correction ] = hf_trend(yrs_corr,bruker.hcl);
+    [~,~,ind]=intersect_repeat(bruker.hcl.year,yrs_corr);
+    tmp=correction(ind);
+    bruker.hcl.tot_col=bruker.hcl.tot_col-tmp;
+
+    yrs_corr=unique(bruker.hno3.year);
+    [ correction ] = hf_trend(yrs_corr,bruker.hno3);
+    [~,~,ind]=intersect_repeat(bruker.hno3.year,yrs_corr);
+    tmp=correction(ind);
+    bruker.hno3.tot_col=bruker.hno3.tot_col-tmp;
+    
+elseif isempty(corr_other)
+    disp('No trend correction for HCl, HNO3')
+else
+    error('invalid option for HCl, HNO3 trend correction')
+end
+    
 %% correct for HF trend
 yrs_corr=unique(bruker.hf.year);
 [ correction ] = hf_trend(yrs_corr,bruker.hf);
@@ -189,17 +211,6 @@ for i=fieldnames(bruker)'
     end
 end
 
-% yrs_corr=unique(bruker.hcl.year);
-% [ correction ] = hf_trend(yrs_corr,bruker.hcl);
-% [~,~,ind]=intersect_repeat(bruker.hcl.year,yrs_corr);
-% tmp=correction(ind);
-% bruker.hcl.tot_col=bruker.hcl.tot_col-tmp;
-% 
-% yrs_corr=unique(bruker.hno3.year);
-% [ correction ] = hf_trend(yrs_corr,bruker.hno3);
-% [~,~,ind]=intersect_repeat(bruker.hno3.year,yrs_corr);
-% tmp=correction(ind);
-% bruker.hno3.tot_col=bruker.hno3.tot_col-tmp;
 
 
 %% save updated file
